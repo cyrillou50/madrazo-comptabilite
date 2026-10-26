@@ -1,3 +1,18 @@
+
+# ========================================
+# COMPTABILITÉ MADRAZO — GITHUB PUBLIC
+# ========================================
+
+# Backend privé — hébergé sur le VPS
+/backend/
+
+# Base de données et scripts privés
+/database/
+/scripts/
+
+# Documentation serveur privée
+/docs/deployment/
+
 # Dépendances et sorties de compilation
 node_modules/
 dist/
@@ -34,4 +49,3 @@ Thumbs.db
 # Archives de publication locales
 *.tgz
 *.tar.gz
-
