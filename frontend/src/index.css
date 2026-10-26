@@ -41,7 +41,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.animate-enter { animation: fade-up .35s ease-out both; }
+/* « backwards » : aucune transformation ne subsiste après l'animation (elle piégerait les éléments fixes). */
+.animate-enter { animation: fade-up .35s ease-out backwards; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
 }

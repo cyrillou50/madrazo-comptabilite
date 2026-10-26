@@ -1,21 +1,32 @@
 export type Id = string | number;
 
+export interface Preferences {
+  organizationName: string;
+  currency: string;
+  debtWarningDays: number;
+  defaultPageSize: number;
+}
+
 export interface User {
   id: Id;
   username?: string;
   displayName: string;
   roleId?: Id;
+  roleCode?: string;
   role: string;
   avatarUrl?: string | null;
   permissions: string[];
   enabled?: boolean;
   lastLoginAt?: string | null;
+  preferences?: Partial<Preferences>;
 }
 
 export interface Group {
   id: Id;
   name: string;
-  type: string;
+  typeId?: Id | null;
+  typeName?: string | null;
+  blockOrders?: boolean | number;
   manager?: string | null;
   phone?: string | null;
   description?: string | null;
@@ -97,7 +108,8 @@ export interface Payment {
   groupName?: string;
   amount: number;
   paymentDate: string;
-  method?: string;
+  paymentMethodId?: Id | null;
+  method?: string | null;
   notes?: string | null;
   cancelledAt?: string | null;
 }
@@ -109,17 +121,53 @@ export interface Expense {
   amount: number;
   expenseDate: string;
   notes?: string | null;
+  userName?: string;
 }
+
+export type AuditData = Record<string, any> | null;
 
 export interface AuditLog {
   id: Id;
   userName?: string;
+  actorUsername?: string | null;
   action: string;
   entityType?: string;
   entityId?: Id;
   ipAddress?: string;
   createdAt: string;
-  details?: Record<string, unknown>;
+  beforeData?: AuditData;
+  afterData?: AuditData;
+}
+
+export interface NotificationAlert {
+  id: 'stock' | 'orders' | 'debts';
+  count: number;
+  outOfStock?: number;
+  names?: string[];
+  remainingAmount?: number;
+  days?: number;
+  changedAt?: string | null;
+  unread: boolean;
+}
+
+export interface NotificationEvent {
+  id: Id;
+  action: string;
+  entityType?: string;
+  entityId?: Id;
+  actorName?: string | null;
+  userName?: string | null;
+  createdAt: string;
+  beforeData?: AuditData;
+  afterData?: AuditData;
+  unread: boolean;
+}
+
+export interface NotificationsData {
+  seenAt: string | null;
+  unreadCount: number;
+  alerts: NotificationAlert[];
+  events: NotificationEvent[];
 }
 
 export interface DashboardData {

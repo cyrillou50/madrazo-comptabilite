@@ -87,6 +87,24 @@ immédiatement `FIRST_ADMIN_PASSWORD` de l'environnement. Cette opération doit 
 - recommander une rotation immédiate si le mot de passe a été transmis par un canal temporaire.
 
 Les rôles, leurs permissions, ainsi que les catégories de marchandises et de
-dépenses se gèrent ensuite depuis l'interface. Aucun libellé métier par défaut
-n'est imposé après la migration de personnalisation.
+dépenses, les types de groupes et les moyens de paiement se gèrent ensuite
+depuis l'interface. Aucune catégorie métier par défaut n'est imposée.
+
+## Récupération d'accès depuis le serveur
+
+Deux commandes, exécutées depuis `backend/`, permettent de retrouver l'accès
+sans passer par l'interface :
+
+```bash
+npm run admin:users                      # liste les comptes et leurs pseudos
+RESET_USER=Patron RESET_GENERATE_PASSWORD=1 npm run admin:reset
+```
+
+`admin:reset` identifie le compte par son pseudo actuel ou son numéro
+(`RESET_USER`), le déverrouille, puis peut changer son pseudo
+(`RESET_NEW_USERNAME`) et son mot de passe (`RESET_PASSWORD`, ou
+`RESET_GENERATE_PASSWORD=1` pour en générer un affiché une seule fois et éviter
+qu'il reste dans l'historique du shell). `RESET_ACTIVATE=1` réactive aussi un
+compte désactivé. Après `npm prune --omit=dev`, utiliser les versions compilées :
+`node dist/cli/list-users.js` et `node dist/cli/reset-user.js`.
 

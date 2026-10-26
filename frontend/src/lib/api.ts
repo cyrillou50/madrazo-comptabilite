@@ -61,7 +61,6 @@ function normalizeResponse(value: any): any {
     if (amount !== undefined && result[target] === undefined) result[target] = amount / 100;
   }
   if (result.sku !== undefined && result.reference === undefined) result.reference = result.sku;
-  if (result.email !== undefined && result.username === undefined) result.username = result.email;
   if (result.stockQuantity !== undefined && result.physicalStock === undefined) result.physicalStock = numeric(result.stockQuantity) ?? 0;
   if (result.reservedQuantity !== undefined && result.reservedStock === undefined) result.reservedStock = numeric(result.reservedQuantity) ?? 0;
   if (result.availableQuantity !== undefined) {
@@ -95,7 +94,6 @@ function normalizeResponse(value: any): any {
   if (typeof result.status === 'string') result.status = statusToFrench[result.status.toLowerCase()] || result.status;
   if (typeof result.paymentStatus === 'string') result.paymentStatus = statusToFrench[result.paymentStatus.toLowerCase()] || result.paymentStatus;
   if (typeof result.role === 'string') result.role = roleToFrench[result.role.toLowerCase()] || result.role;
-  if (typeof result.method === 'string') result.method = ({ cash: 'Espèces', bank: 'Virement', dirty_money: 'Argent sale', other: 'Autre' } as Record<string, string>)[result.method] || result.method;
   return result;
 }
 
@@ -152,7 +150,8 @@ async function request<T>(path: string, options: Options = {}, retry = true): Pr
   const query = new URLSearchParams();
   Object.entries(options.query || {}).forEach(([key, value]) => {
     const apiKey = key === 'pageSize' ? 'limit' : key;
-    if (value !== undefined && value !== null && value !== '') query.set(apiKey, typeof value === 'string' ? apiStatus(value) : String(value));
+    const isStatus = key === 'status' || key === 'paymentStatus';
+    if (value !== undefined && value !== null && value !== '') query.set(apiKey, isStatus && typeof value === 'string' ? apiStatus(value) : String(value));
   });
   const url = `${API_URL}${path.startsWith('/') ? path : `/${path}`}${query.size ? `?${query}` : ''}`;
   const headers = new Headers(options.headers);

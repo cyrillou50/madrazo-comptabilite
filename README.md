@@ -24,8 +24,9 @@ Les montants et stocks affichés par le frontend viennent de l'API. Le navigateu
 - commandes multi-articles, livraisons partielles et réservations ;
 - mouvements de stock traçables et idempotence des livraisons ;
 - paiements partiels, dettes, dépenses et registre de caisse ;
-- pseudos de connexion, rôles personnalisables, permissions fines, sessions serveur et journal d'audit ;
-- catégories de marchandises et de dépenses entièrement administrables ;
+- pseudos de connexion, rôles personnalisables, permissions fines, sessions serveur et journal d'audit lisible ;
+- catégories de marchandises et de dépenses, types de groupes et moyens de paiement entièrement administrables ;
+- centre de notifications filtré selon les droits, avec suivi lu / non lu ;
 - exports et documentation OpenAPI ;
 - tests de logique métier et d'API.
 

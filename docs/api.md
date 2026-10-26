@@ -20,19 +20,27 @@ Routes principales :
 | Domaine | Préfixe | Exemples d'opérations |
 |---|---|---|
 | Santé | `/api/health` | disponibilité et état des dépendances |
-| Authentification | `/api/auth` | connexion, déconnexion, session courante, CSRF |
-| Utilisateurs | `/api/users` | comptes par pseudo, activation, permissions fines |
+| Authentification | `/api/auth` | connexion par pseudo, déconnexion, session courante et préférences d'affichage, changement de son mot de passe, CSRF |
+| Notifications | `/api/notifications` | alertes et activité récente filtrées par droits, marquage comme lu (`POST /read`) |
+| Utilisateurs | `/api/users` | comptes par pseudo, modification du pseudo, réinitialisation du mot de passe, activation, permissions fines |
 | Rôles | `/api/roles` | rôles personnalisés et permissions associées |
 | Groupes | `/api/groups` | CRUD logique, tarifs, activité, dettes |
+| Types de groupes | `/api/group-types` | liste administrable |
 | Contacts | `/api/contacts` | contacts, groupe, interactions, archivage |
 | Articles | `/api/items` | catalogue, prix et historique |
 | Catégories | `/api/item-categories`, `/api/expense-categories` | catégories administrables |
 | Commandes | `/api/orders` | lignes, transitions, livraisons et annulations |
 | Stocks | `/api/stocks` | état, mouvements, ajustements, alertes |
+| Moyens de paiement | `/api/payment-methods` | liste administrable (Espèces, Virement, Argent sale…) |
 | Paiements | `/api/payments` | règlements partiels et annulations compensées |
 | Dépenses | `/api/expenses` | dépenses et catégories |
 | Tableau de bord | `/api/dashboard` | indicateurs et séries filtrées |
-| Audit | `/api/audit-logs` | consultation autorisée du journal |
+| Audit | `/api/audit-logs` | consultation autorisée du journal, recherche par utilisateur ou adresse IP |
+
+Les listes administrables (`/api/item-categories`, `/api/expense-categories`, `/api/group-types`,
+`/api/payment-methods`) partagent les mêmes opérations : `GET` (avec `includeInactive=true`
+pour inclure les entrées archivées), `POST`, `PUT /:id`, `POST /:id/archive`,
+`POST /:id/restore` et `DELETE /:id` (refusé tant que l'entrée est utilisée).
 
 ## Conventions
 

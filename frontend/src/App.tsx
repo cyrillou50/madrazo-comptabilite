@@ -1,9 +1,11 @@
 import { lazy, Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ConfirmProvider } from './contexts/ConfirmContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { AppShell } from './components/AppShell';
 import { RouteGuard } from './components/RouteGuard';
+import { firstAllowedPath } from './lib/navigation';
 import { LoginPage } from './pages/LoginPage';
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then((module) => ({ default: module.DashboardPage })));
 const GroupsPage = lazy(() => import('./pages/GroupsPage').then((module) => ({ default: module.GroupsPage })));
@@ -28,21 +30,29 @@ function Private({ children, permission }: { children: React.ReactNode; permissi
 }
 function LoginRoute() { const { user, loading } = useAuth(); const location = useLocation(); if (!loading && user) return <Navigate to="/" replace state={{ from: location }} />; return <LoginPage />; }
 
+// Un rôle sans accès au tableau de bord arrive directement sur sa première rubrique autorisée.
+function Home() {
+  const { can } = useAuth();
+  if (can('dashboard.read')) return <DashboardPage />;
+  const path = firstAllowedPath(can);
+  return path && path !== '/' ? <Navigate to={path} replace /> : <ForbiddenPage />;
+}
+
 export default function App() {
-  return <HashRouter><AuthProvider><ToastProvider><Routes>
+  return <HashRouter><AuthProvider><ToastProvider><ConfirmProvider><Routes>
     <Route path="/connexion" element={<LoginRoute />} />
-    <Route path="/" element={<Private><DashboardPage /></Private>} />
-    <Route path="/groupes" element={<Private><GroupsPage /></Private>} />
-    <Route path="/contacts" element={<Private><ContactsPage /></Private>} />
-    <Route path="/catalogue" element={<Private><CatalogPage /></Private>} />
-    <Route path="/stocks" element={<Private><StockPage /></Private>} />
-    <Route path="/ventes" element={<Private><OrdersPage /></Private>} />
-    <Route path="/paiements" element={<Private><PaymentsPage /></Private>} />
-    <Route path="/finances" element={<Private><FinancePage /></Private>} />
+    <Route path="/" element={<Private><Home /></Private>} />
+    <Route path="/groupes" element={<Private permission="groups.read"><GroupsPage /></Private>} />
+    <Route path="/contacts" element={<Private permission="contacts.read"><ContactsPage /></Private>} />
+    <Route path="/catalogue" element={<Private permission="catalog.read"><CatalogPage /></Private>} />
+    <Route path="/stocks" element={<Private permission="stocks.read"><StockPage /></Private>} />
+    <Route path="/ventes" element={<Private permission="orders.read"><OrdersPage /></Private>} />
+    <Route path="/paiements" element={<Private permission="payments.read"><PaymentsPage /></Private>} />
+    <Route path="/finances" element={<Private permission="expenses.read"><FinancePage /></Private>} />
     <Route path="/utilisateurs" element={<Private permission="users.read"><UsersPage /></Private>} />
     <Route path="/journal" element={<Private permission="audit.read"><AuditPage /></Private>} />
     <Route path="/parametres" element={<Private permission="settings.read"><SettingsPage /></Private>} />
     <Route path="/interdit" element={<Private><ForbiddenPage /></Private>} />
     <Route path="*" element={<Private><NotFoundPage /></Private>} />
-  </Routes></ToastProvider></AuthProvider></HashRouter>;
+  </Routes></ConfirmProvider></ToastProvider></AuthProvider></HashRouter>;
 }

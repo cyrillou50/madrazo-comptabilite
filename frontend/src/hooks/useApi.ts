@@ -8,7 +8,8 @@ export interface QueryState<T> {
   reload: () => void;
 }
 
-export function useApi<T>(path: string, query?: Record<string, string | number | boolean | null | undefined>): QueryState<T> {
+/** Charge une ressource de l'API ; un chemin `null` désactive la requête (droit manquant, par exemple). */
+export function useApi<T>(path: string | null, query?: Record<string, string | number | boolean | null | undefined>): QueryState<T> {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -18,6 +19,7 @@ export function useApi<T>(path: string, query?: Record<string, string | number |
   const reload = useCallback(() => setVersion((value) => value + 1), []);
 
   useEffect(() => {
+    if (path === null) { setData(null); setError(null); setLoading(false); return; }
     const controller = new AbortController();
     setLoading(true);
     setError(null);

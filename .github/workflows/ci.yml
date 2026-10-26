@@ -19,19 +19,28 @@ jobs:
     steps:
       - name: Récupérer le dépôt
         uses: actions/checkout@v4
+      # Le backend est privé et exclu du dépôt public : les vérifications ne s'exécutent que s'il est présent.
+      - name: Détecter le backend
+        id: backend
+        run: echo "present=$([ -f backend/package.json ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
       - name: Installer Node.js
+        if: steps.backend.outputs.present == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
           cache-dependency-path: package-lock.json
       - name: Installer les dépendances
+        if: steps.backend.outputs.present == 'true'
         run: npm ci
       - name: Vérifier les types
+        if: steps.backend.outputs.present == 'true'
         run: npm run typecheck --workspace backend
       - name: Exécuter les tests
+        if: steps.backend.outputs.present == 'true'
         run: npm test --workspace backend
       - name: Compiler
+        if: steps.backend.outputs.present == 'true'
         run: npm run build --workspace backend
 
   frontend:
