@@ -19,14 +19,14 @@ const usernameRule = z.string().trim().min(3, 'Le pseudo doit contenir au moins 
 const userSchema = z.object({
   username: usernameRule,
   displayName: z.string().trim().min(2, 'Le nom affiché est obligatoire.').max(100),
-  password: z.string().min(12, '12 caractères minimum.'),
+  password: z.string().min(4, '4 caractères minimum.'),
   roleId: z.string().min(1, 'Choisissez un rôle.'),
 });
 type UserForm = z.infer<typeof userSchema>;
 const editSchema = z.object({
   username: usernameRule,
   displayName: z.string().trim().min(2, 'Le nom affiché est obligatoire.').max(100),
-  password: z.string().refine((value) => value === '' || value.length >= 12, '12 caractères minimum (ou laissez vide).'),
+  password: z.string().refine((value) => value === '' || value.length >= 4, '4 caractères minimum (ou laissez vide).'),
 });
 type EditForm = z.infer<typeof editSchema>;
 

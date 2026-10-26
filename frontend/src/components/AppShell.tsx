@@ -121,7 +121,7 @@ function PasswordDialog({ open, onClose }: { open: boolean; onClose: () => void 
 
   async function submit(event: FormEvent) {
     event.preventDefault();
-    if (next.length < 12) { setError('Le nouveau mot de passe doit contenir au moins 12 caractères.'); return; }
+    if (next.length < 4) { setError('Le nouveau mot de passe doit contenir au moins 4 caractères.'); return; }
     if (next !== confirmation) { setError('La confirmation ne correspond pas au nouveau mot de passe.'); return; }
     setSaving(true);
     try { await changePassword(current, next); notify('Mot de passe modifié. Vos autres sessions ont été fermées.'); onClose(); }
@@ -129,7 +129,7 @@ function PasswordDialog({ open, onClose }: { open: boolean; onClose: () => void 
     finally { setSaving(false); }
   }
 
-  return <Modal open={open} onClose={onClose} title="Changer mon mot de passe" description="Choisissez un mot de passe d’au moins 12 caractères." size="sm">
+  return <Modal open={open} onClose={onClose} title="Changer mon mot de passe" description="Choisissez un mot de passe d’au moins 4 caractères." size="sm">
     <form onSubmit={submit} className="space-y-4 p-5">
       <Input label="Mot de passe actuel" type="password" autoComplete="current-password" value={current} onChange={(event) => setCurrent(event.target.value)} required autoFocus />
       <Input label="Nouveau mot de passe" type="password" autoComplete="new-password" value={next} onChange={(event) => setNext(event.target.value)} required />
