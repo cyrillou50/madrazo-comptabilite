@@ -1,0 +1,60 @@
+name: Vérifications
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Installer les dépendances
+        run: npm ci
+      - name: Vérifier les types
+        run: npm run typecheck --workspace backend
+      - name: Exécuter les tests
+        run: npm test --workspace backend
+      - name: Compiler
+        run: npm run build --workspace backend
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - name: Installer les dépendances
+        run: npm ci
+      - name: Vérifier les types
+        run: npm run typecheck --workspace frontend
+      - name: Exécuter les tests
+        run: npm test --workspace frontend
+      - name: Compiler
+        env:
+          VITE_API_URL: https://api-madrazo.code-eternal.fr
+          VITE_BASE_PATH: /
+        run: npm run build --workspace frontend
+

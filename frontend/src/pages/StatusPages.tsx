@@ -1,0 +1,6 @@
+import { ArrowLeft, ShieldX } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button, Panel } from '../components/ui';
+
+export function ForbiddenPage() { return <div className="grid min-h-[65vh] place-items-center"><Panel className="max-w-md p-8 text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-red-500/10 text-red-400"><ShieldX className="h-7 w-7" /></span><h1 className="mt-5 text-xl font-bold">Accès non autorisé</h1><p className="mt-2 text-sm text-zinc-500">Votre rôle ne permet pas de consulter cette section. La tentative n’a modifié aucune donnée.</p><Link to="/"><Button className="mt-5"><ArrowLeft className="h-4 w-4" />Retour au tableau de bord</Button></Link></Panel></div>; }
+export function NotFoundPage() { return <div className="grid min-h-[65vh] place-items-center"><Panel className="max-w-md p-8 text-center"><p className="font-display text-5xl font-black text-blood-500">404</p><h1 className="mt-3 text-xl font-bold">Page introuvable</h1><p className="mt-2 text-sm text-zinc-500">Cette section n’existe pas ou a été déplacée.</p><Link to="/"><Button className="mt-5"><ArrowLeft className="h-4 w-4" />Retour à l’accueil</Button></Link></Panel></div>; }

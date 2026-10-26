@@ -1,0 +1,22 @@
+# Configuration temporaire, avant émission du certificat. Installer sous un nom
+# propre à Madrazo, valider avec `nginx -t`, puis recharger Nginx uniquement avec
+# l'autorisation de l'administrateur.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name api-madrazo.code-eternal.fr;
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/letsencrypt;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:3002;
+        include proxy_params;
+        proxy_http_version 1.1;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-ID $request_id;
+    }
+}
+

@@ -1,0 +1,16 @@
+-- Modèle uniquement. Ne pas versionner le mot de passe réel et ne pas exécuter
+-- ce fichier avant inspection des bases/utilisateurs existants et autorisation.
+
+CREATE DATABASE IF NOT EXISTS `madrazo`
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+
+-- Remplacer le marqueur dans une copie hors dépôt.
+CREATE USER IF NOT EXISTS 'madrazo_app'@'127.0.0.1'
+  IDENTIFIED BY 'REMPLACER_PAR_UN_SECRET_HORS_GIT';
+
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES
+  ON `madrazo`.* TO 'madrazo_app'@'127.0.0.1';
+
+FLUSH PRIVILEGES;
+
