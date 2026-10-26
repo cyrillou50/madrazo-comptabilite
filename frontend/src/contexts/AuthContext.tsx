@@ -15,7 +15,7 @@ interface AuthValue {
   can: (permission: string) => boolean;
 }
 
-const defaultPreferences: Preferences ={ organizationName: 'MADRAZO', currency: 'USD', debtWarningDays: 30, defaultPageSize: 25 };
+const defaultPreferences: Preferences = { organizationName: 'MADRAZO', currency: 'USD', debtWarningDays: 30, defaultPageSize: 25, launderingFeePercent: 0 };
 
 const AuthContext = createContext<AuthValue | null>(null);
 

@@ -11,13 +11,16 @@ export interface ManagedCategory {
   id: string | number;
   name: string;
   description?: string | null;
+  isDirty?: boolean;
   isActive?: boolean;
   usageCount?: number;
 }
 
 export type ManagedListKind = 'item-categories' | 'expense-categories' | 'group-types' | 'payment-methods';
 
-const lists: Record<ManagedListKind, { endpoint: string; title: string; help: string; noun: string; feminine: boolean; usage: string; withDescription?: boolean }> = {
+interface ListFlag { field: 'isDirty'; label: string; hint: string }
+
+const lists: Record<ManagedListKind, { endpoint: string; title: string; help: string; noun: string; feminine: boolean; usage: string; withDescription?: boolean; flag?: ListFlag }> = {
   'item-categories': {
     endpoint: '/item-categories', title: 'Catégories de marchandises', noun: 'catégorie', feminine: true, usage: 'marchandise(s)', withDescription: true,
     help: 'Créez vos propres catégories pour classer les marchandises. Aucune catégorie n’est imposée.',
@@ -33,6 +36,7 @@ const lists: Record<ManagedListKind, { endpoint: string; title: string; help: st
   'payment-methods': {
     endpoint: '/payment-methods', title: 'Moyens de paiement', noun: 'moyen de paiement', feminine: false, usage: 'paiement(s)',
     help: 'Choisissez les moyens de paiement proposés lors d’un encaissement.',
+    flag: { field: 'isDirty', label: 'Argent sale', hint: 'Les paiements reçus ainsi vont dans la caisse d’argent sale.' },
   },
 };
 
@@ -55,11 +59,12 @@ function ListEditor({ kind, onClose, onChanged }: { kind: ManagedListKind; onClo
   const [editing, setEditing] = useState<ManagedCategory | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [flag, setFlag] = useState(false);
   const [saving, setSaving] = useState(false);
   const { notify } = useToast();
   const { confirm } = useConfirm();
 
-  useEffect(() => { setName(editing?.name ?? ''); setDescription(editing?.description ?? ''); }, [editing]);
+  useEffect(() => { setName(editing?.name ?? ''); setDescription(editing?.description ?? ''); setFlag(Boolean(config.flag && editing?.[config.flag.field])); }, [editing, config.flag]);
 
   function changed() { query.reload(); onChanged?.(); }
 
@@ -69,10 +74,14 @@ function ListEditor({ kind, onClose, onChanged }: { kind: ManagedListKind; onClo
     if (trimmedName.length < 2) { notify('Le nom doit contenir au moins 2 caractères.', 'error'); return; }
     setSaving(true);
     try {
-      const body = config.withDescription ? { name: trimmedName, description: description.trim() || null } : { name: trimmedName };
+      const body = {
+        name: trimmedName,
+        ...(config.withDescription ? { description: description.trim() || null } : {}),
+        ...(config.flag ? { flag } : {}),
+      };
       if (editing) await api.put(`${config.endpoint}/${editing.id}`, body); else await api.post(config.endpoint, body);
       notify(editing ? `${Noun} mis${e} à jour.` : `${Noun} créé${e}.`);
-      setEditing(null); setName(''); setDescription('');
+      setEditing(null); setName(''); setDescription(''); setFlag(false);
       changed();
     } catch (reason) {
       notify(reason instanceof ApiError ? reason.message : 'Enregistrement impossible.', 'error');
@@ -106,6 +115,7 @@ function ListEditor({ kind, onClose, onChanged }: { kind: ManagedListKind; onClo
       <div className={`mt-4 grid gap-3 ${config.withDescription ? 'sm:grid-cols-2' : ''}`}>
         <Input label="Nom" value={name} onChange={(event) => setName(event.target.value)} maxLength={100} required autoFocus />
         {config.withDescription && <Textarea label="Description (facultative)" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} className="[&_textarea]:min-h-[46px]" />}
+        {config.flag && <label className="flex items-start gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3 text-sm text-zinc-300"><input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0 accent-blood-600" checked={flag} onChange={(event) => setFlag(event.target.checked)} /><span><span className="block font-medium text-zinc-200">{config.flag.label}</span><span className="mt-0.5 block text-xs text-zinc-600">{config.flag.hint}</span></span></label>}
       </div>
     </div>
 
@@ -115,7 +125,7 @@ function ListEditor({ kind, onClose, onChanged }: { kind: ManagedListKind; onClo
         ? <div className="rounded-xl border border-dashed border-white/10 p-8 text-center"><Tags className="mx-auto h-6 w-6 text-zinc-700" /><p className="mt-2 text-sm text-zinc-500">La liste est vide. Ajoutez votre première entrée ci-dessus.</p></div>
         : items.map((item) => <div key={item.id} className="flex flex-col gap-3 rounded-xl border border-white/[.06] bg-white/[.02] p-3 sm:flex-row sm:items-center">
           <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2"><p className="font-medium text-zinc-200">{item.name}</p>{item.isActive === false && <Badge tone="neutral">Archivé{e}</Badge>}</div>
+            <div className="flex flex-wrap items-center gap-2"><p className="font-medium text-zinc-200">{item.name}</p>{config.flag && item[config.flag.field] && <Badge tone="warning">{config.flag.label}</Badge>}{item.isActive === false && <Badge tone="neutral">Archivé{e}</Badge>}</div>
             {item.description && <p className="mt-1 truncate text-xs text-zinc-600">{item.description}</p>}
             <p className="mt-1 text-[11px] text-zinc-700">{item.usageCount ? `Utilisé${e} par ${item.usageCount} ${config.usage}` : 'Pas encore utilisé' + e}</p>
           </div>

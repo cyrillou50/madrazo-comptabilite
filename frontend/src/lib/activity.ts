@@ -31,13 +31,13 @@ const entityLabels: Record<string, string> = {
   user: 'Utilisateur', role: 'Rôle', group: 'Groupe', contact: 'Contact', item: 'Marchandise', order: 'Vente',
   payment: 'Paiement', stock_movement: 'Mouvement de stock', expense: 'Dépense', item_category: 'Catégorie de marchandises',
   expense_category: 'Catégorie de dépenses', group_type: 'Type de groupe', payment_method: 'Moyen de paiement',
-  setting: 'Paramètres', settings: 'Paramètres',
+  setting: 'Paramètres', settings: 'Paramètres', treasury_operation: 'Opération de trésorerie',
 };
 
 const entityLinks: Record<string, string> = {
   order: '/ventes', payment: '/paiements', stock_movement: '/stocks', expense: '/finances', group: '/groupes', contact: '/contacts',
   item: '/catalogue', item_category: '/catalogue', expense_category: '/finances', group_type: '/groupes', payment_method: '/paiements',
-  user: '/utilisateurs', role: '/utilisateurs', settings: '/parametres', setting: '/parametres',
+  user: '/utilisateurs', role: '/utilisateurs', settings: '/parametres', setting: '/parametres', treasury_operation: '/finances',
 };
 
 const quoted = (value: unknown) => (value ? `« ${value} »` : '');
@@ -48,6 +48,8 @@ const signed = (value: unknown) => {
   return Number.isFinite(quantity) ? `${quantity > 0 ? '+' : ''}${number(quantity)}` : '';
 };
 const userName = (data: Data) => data.displayName || (data.username ? `@${data.username}` : '');
+const cents = (value: unknown) => (typeof value === 'number' ? money(value / 100) : '');
+const fundName = (fund: unknown) => (fund === 'dirty' ? 'argent sale' : 'argent propre');
 
 const stockMovementLabels: Record<string, string> = { entry: 'Entrée de stock', return: 'Retour en stock', adjustment: 'Correction de stock' };
 const stockMovementSentences: Record<string, string> = { entry: 'une entrée de stock', return: 'un retour en stock', adjustment: 'une correction de stock' };
@@ -125,6 +127,10 @@ const actions: Record<string, ActionText> = {
   'expense.created': { label: 'Dépense enregistrée', sentence: (a) => `a enregistré la dépense ${quoted(a.label)}${a.amount !== undefined ? ` (${money(a.amount)})` : ''}`, detail: (a) => join(a.label, money(a.amount), a.category) },
   'expense.reversed': { label: 'Dépense annulée', sentence: (a) => `a annulé la dépense ${quoted(a.label)}`, detail: (a) => join(a.label, money(a.amount), a.reason && `motif : ${a.reason}`) },
 
+  'treasury.deposit_created': { label: 'Argent ajouté', sentence: (a) => `a ajouté ${money(a.amount)} en ${fundName(a.fund)}`, detail: (a) => join(a.label, money(a.amount), fundName(a.fund)) },
+  'treasury.laundering_created': { label: 'Argent blanchi', sentence: (a) => `a blanchi ${cents(a.dirtyAmountCents)} d’argent sale (${cents(a.cleanAmountCents)} d’argent propre obtenus)`, detail: (a) => join(`${cents(a.dirtyAmountCents)} sale → ${cents(a.cleanAmountCents)} propre`, typeof a.feeCents === 'number' && `commission ${cents(a.feeCents)}`) },
+  'treasury.operation_reversed': { label: 'Opération de trésorerie annulée', sentence: (a) => (a.operationType === 'laundering' ? `a annulé un blanchiment de ${money(a.amount)}` : `a annulé l’apport ${quoted(a.label)}`), detail: (a) => join(a.label, money(a.amount), a.reason && `motif : ${a.reason}`) },
+
   'setting.updated': { label: 'Paramètre modifié', sentence: () => 'a modifié les paramètres' },
   'settings.updated': { label: 'Paramètres modifiés', sentence: () => 'a modifié les paramètres' },
 };
@@ -159,7 +165,10 @@ const fieldLabels: Array<[string, string, (value: any) => string]> = [
   ['itemName', 'Marchandise', String], ['sku', 'Référence interne', String], ['category', 'Catégorie', String], ['method', 'Moyen de paiement', String],
   ['status', 'Statut', String], ['amount', 'Montant', money], ['totalAmount', 'Total', money], ['defaultPrice', 'Prix de vente', money],
   ['quantityDelta', 'Quantité', signed], ['type', 'Type de mouvement', (value) => stockMovementLabels[value] ?? String(value)],
+  ['fund', 'Caisse', (value) => (value === 'dirty' ? 'Argent sale' : 'Argent propre')], ['dirtyAmountCents', 'Argent sale engagé', cents],
+  ['cleanAmountCents', 'Argent propre obtenu', cents], ['feeCents', 'Commission', cents],
   ['reason', 'Motif', String], ['description', 'Description', String], ['isActive', 'Actif', (value) => (value ? 'Oui' : 'Non')],
+  ['isDirty', 'Argent sale', (value) => (value ? 'Oui' : 'Non')], ['launderingFeePercent', 'Commission de blanchiment (%)', String],
   ['organizationName', 'Nom affiché', String], ['currency', 'Devise', (value) => (value === 'EUR' ? '€' : '$')],
   ['stockReservationEnabled', 'Réservation automatique', (value) => (value ? 'Oui' : 'Non')],
   ['sessionDurationMinutes', 'Durée de session (minutes)', String], ['debtWarningDays', 'Alerte dette après (jours)', String],

@@ -5,6 +5,7 @@ export interface Preferences {
   currency: string;
   debtWarningDays: number;
   defaultPageSize: number;
+  launderingFeePercent: number;
 }
 
 export interface User {
@@ -126,6 +127,24 @@ export interface Expense {
 
 export type AuditData = Record<string, any> | null;
 
+export type Fund = 'clean' | 'dirty';
+
+export interface FundBalances { cleanCents: number; dirtyCents: number; totalCents: number }
+
+export interface LedgerEntry {
+  id: Id;
+  occurredAt: string;
+  type: string;
+  typeLabel: string;
+  fund: Fund;
+  label: string;
+  amount: number;
+  sourceType: string | null;
+  sourceId: Id | null;
+  userName?: string;
+  reversed: boolean;
+}
+
 export interface AuditLog {
   id: Id;
   userName?: string;
@@ -177,6 +196,8 @@ export interface DashboardData {
     grossProfit: number;
     expenses: number;
     cashBalance: number;
+    cleanBalance?: number;
+    dirtyBalance?: number;
     outstandingDebt: number;
     salesCount: number;
     groupsCount: number;

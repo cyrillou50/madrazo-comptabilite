@@ -33,7 +33,9 @@ Routes principales :
 | Stocks | `/api/stocks` | état, mouvements, ajustements, alertes |
 | Moyens de paiement | `/api/payment-methods` | liste administrable (Espèces, Virement, Argent sale…) |
 | Paiements | `/api/payments` | règlements partiels et annulations compensées |
-| Dépenses | `/api/expenses` | dépenses et catégories |
+| Dépenses | `/api/expenses` | dépenses (payées en argent propre ou sale) et catégories |
+| Trésorerie | `/api/treasury` | soldes argent propre / sale, apports (`POST /deposits`), blanchiment (`POST /laundering`), annulation (`POST /:id/reverse`) |
+| Registre | `/api/finances/ledger` | chaque mouvement de caisse avec sa caisse (propre ou sale) |
 | Tableau de bord | `/api/dashboard` | indicateurs et séries filtrées |
 | Audit | `/api/audit-logs` | consultation autorisée du journal, recherche par utilisateur ou adresse IP |
 

@@ -52,7 +52,7 @@ export function DashboardPage() {
         <StatCard label="Chiffre d’affaires" value={currency(t.revenue)} caption={`${number(t.salesCount)} vente${t.salesCount > 1 ? 's' : ''}`} icon={TrendingUp} />
         <StatCard label="Bénéfice brut" value={currency(t.grossProfit)} caption="Estimation hors dépenses" icon={CircleDollarSign} tone="positive" />
         <StatCard label="Dépenses" value={currency(t.expenses)} caption="Décaissements de la période" icon={ReceiptText} tone="negative" />
-        <StatCard label="Solde de caisse" value={currency(t.cashBalance)} caption="Trésorerie disponible" icon={WalletCards} tone={t.cashBalance >= 0 ? 'positive' : 'negative'} />
+        <StatCard label="Solde de caisse" value={currency(t.cashBalance)} caption={t.dirtyBalance !== undefined ? `Propre ${currency(t.cleanBalance ?? 0)} · Sale ${currency(t.dirtyBalance)}` : 'Trésorerie disponible'} icon={WalletCards} tone={t.cashBalance >= 0 ? 'positive' : 'negative'} />
         <StatCard label="Dettes clients" value={currency(t.outstandingDebt)} caption="Montant restant à recouvrer" icon={HandCoins} tone={t.outstandingDebt > 0 ? 'warning' : 'positive'} />
         <StatCard label="Commandes en attente" value={number(t.pendingOrders)} caption={`${number(t.groupsCount)} groupes · ${number(t.contactsCount)} contacts`} icon={Clock3} tone={t.pendingOrders ? 'warning' : 'neutral'} />
         <StatCard label="Alertes de stock" value={number(t.lowStockItems)} caption="Ruptures ou seuil critique" icon={PackageX} tone={t.lowStockItems ? 'negative' : 'positive'} />

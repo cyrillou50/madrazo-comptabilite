@@ -8,6 +8,7 @@ const sections: Array<{ prefix: string; label: string }> = [
   { prefix: 'stocks', label: 'Stocks' },
   { prefix: 'payments', label: 'Dettes & paiements' },
   { prefix: 'expenses', label: 'Finances' },
+  { prefix: 'treasury', label: 'Finances' },
   { prefix: 'users', label: 'Utilisateurs & rôles' },
   { prefix: 'audit', label: 'Journal d’activité' },
   { prefix: 'settings', label: 'Paramètres' },
