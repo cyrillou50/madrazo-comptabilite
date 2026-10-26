@@ -4,6 +4,7 @@ export interface User {
   id: Id;
   username?: string;
   displayName: string;
+  roleId?: Id;
   role: string;
   avatarUrl?: string | null;
   permissions: string[];

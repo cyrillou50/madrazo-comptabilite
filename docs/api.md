@@ -12,16 +12,21 @@ fetch(`${apiUrl}/api/auth/me`, { credentials: "include" });
 
 Après connexion, le client récupère/conserve le jeton CSRF associé à la session. Toute méthode mutante le transmet dans l'en-tête prévu par l'API. Le cookie et le jeton ne remplacent pas les contrôles de permission.
 
+Le corps de connexion contient `username` (le pseudo) et `password`. Une
+adresse e-mail n'est ni requise ni utilisée comme identifiant.
+
 Routes principales :
 
 | Domaine | Préfixe | Exemples d'opérations |
 |---|---|---|
 | Santé | `/api/health` | disponibilité et état des dépendances |
 | Authentification | `/api/auth` | connexion, déconnexion, session courante, CSRF |
-| Utilisateurs | `/api/users` | comptes, rôles, activation, permissions |
+| Utilisateurs | `/api/users` | comptes par pseudo, activation, permissions fines |
+| Rôles | `/api/roles` | rôles personnalisés et permissions associées |
 | Groupes | `/api/groups` | CRUD logique, tarifs, activité, dettes |
 | Contacts | `/api/contacts` | contacts, groupe, interactions, archivage |
-| Articles | `/api/items` | catalogue, catégories, prix et historique |
+| Articles | `/api/items` | catalogue, prix et historique |
+| Catégories | `/api/item-categories`, `/api/expense-categories` | catégories administrables |
 | Commandes | `/api/orders` | lignes, transitions, livraisons et annulations |
 | Stocks | `/api/stocks` | état, mouvements, ajustements, alertes |
 | Paiements | `/api/payments` | règlements partiels et annulations compensées |

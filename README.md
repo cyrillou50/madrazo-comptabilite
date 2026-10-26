@@ -24,13 +24,14 @@ Les montants et stocks affichés par le frontend viennent de l'API. Le navigateu
 - commandes multi-articles, livraisons partielles et réservations ;
 - mouvements de stock traçables et idempotence des livraisons ;
 - paiements partiels, dettes, dépenses et registre de caisse ;
-- rôles, permissions fines, sessions serveur et journal d'audit ;
+- pseudos de connexion, rôles personnalisables, permissions fines, sessions serveur et journal d'audit ;
+- catégories de marchandises et de dépenses entièrement administrables ;
 - exports et documentation OpenAPI ;
 - tests de logique métier et d'API.
 
 ## Prérequis de développement
 
-- Node.js 22 LTS ou ultérieur ;
+- Node.js 22.12 ou ultérieur ;
 - npm 10 ou ultérieur ;
 - MariaDB 10.11 ou ultérieur pour l'exécution réelle ;
 - Git.
@@ -64,6 +65,11 @@ Backend :
 - `SESSION_SECRET` avec au moins 32 octets aléatoires ;
 - `ALLOWED_ORIGINS`, liste stricte séparée par des virgules ;
 - `PORT`, `NODE_ENV`, `TRUST_PROXY`.
+
+La création initiale du Patron utilise temporairement `FIRST_ADMIN_USERNAME`,
+`FIRST_ADMIN_PASSWORD` et `FIRST_ADMIN_DISPLAY_NAME`. Ces variables ne servent
+qu'à `npm run admin:create` et doivent être retirées de l'environnement après
+la création du compte.
 
 Frontend :
 

@@ -1,5 +1,5 @@
 export const currency = new Intl.NumberFormat('fr-FR', {
-  style: 'currency', currency: 'USD', maximumFractionDigits: 0,
+  style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0,
 }).format;
 
 export const number = new Intl.NumberFormat('fr-FR').format;

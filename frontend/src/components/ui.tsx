@@ -1,4 +1,4 @@
-import { useEffect, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
+import { useEffect, useId, useRef, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from 'react';
 import { AlertTriangle, LoaderCircle, Plus, RotateCcw, Search, X } from 'lucide-react';
 import clsx from 'clsx';
 import { statusTone } from '../lib/format';
@@ -76,22 +76,43 @@ export function SearchField({ value, onChange, placeholder = 'Rechercher…' }: 
 }
 
 export function Modal({ open, onClose, title, description, children, size = 'md' }: { open: boolean; onClose: () => void; title: string; description?: string; children: ReactNode; size?: 'md' | 'lg' | 'xl' }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  const titleId = useId();
+  const descriptionId = useId();
+
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.style.overflow = 'hidden';
-    const listener = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose(); };
+    dialogRef.current?.focus();
+    const listener = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeRef.current();
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = [...dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex]:not([tabindex="-1"])')];
+      if (!focusable.length) { event.preventDefault(); return; }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
     document.addEventListener('keydown', listener);
-    return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', listener); };
-  }, [open, onClose]);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener('keydown', listener);
+      previouslyFocused?.focus();
+    };
+  }, [open]);
   if (!open) return null;
-  return <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-    <div role="dialog" aria-modal="true" aria-labelledby="modal-title" className={clsx('max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-white/10 bg-ink-900 shadow-2xl sm:rounded-2xl', size === 'md' && 'max-w-lg', size === 'lg' && 'max-w-2xl', size === 'xl' && 'max-w-4xl')}>
-      <header className="sticky top-0 z-10 flex items-start justify-between border-b border-white/[.07] bg-ink-900/95 px-5 py-4 backdrop-blur">
-        <div><h2 id="modal-title" className="text-lg font-bold text-white">{title}</h2>{description && <p className="mt-1 text-sm text-zinc-500">{description}</p>}</div>
-        <button onClick={onClose} aria-label="Fermer" className="rounded-lg p-2 text-zinc-500 transition hover:bg-white/[.06] hover:text-white"><X className="h-5 w-5" /></button>
+  return <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/75 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
+    <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} aria-describedby={description ? descriptionId : undefined} tabIndex={-1} className={clsx('relative flex h-[100dvh] max-h-[100dvh] w-full min-h-0 flex-col overflow-hidden border border-white/10 bg-ink-900 shadow-2xl outline-none sm:h-auto sm:max-h-[92dvh] sm:rounded-2xl', size === 'md' && 'max-w-lg', size === 'lg' && 'max-w-2xl', size === 'xl' && 'max-w-4xl')}>
+      <header className="z-30 flex shrink-0 items-start justify-between gap-4 border-b border-white/[.07] bg-ink-900/95 px-5 py-4 backdrop-blur">
+        <div className="min-w-0"><h2 id={titleId} className="text-lg font-bold text-white">{title}</h2>{description && <p id={descriptionId} className="mt-1 text-sm leading-relaxed text-zinc-500">{description}</p>}</div>
+        <button type="button" onClick={onClose} aria-label="Fermer" className="shrink-0 rounded-lg p-2 text-zinc-500 transition hover:bg-white/[.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blood-400"><X className="h-5 w-5" /></button>
       </header>
-      {children}
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">{children}</div>
     </div>
   </div>;
 }
@@ -109,5 +130,5 @@ export function EmptyState({ title, description, action }: { title: string; desc
 }
 
 export function FormActions({ cancel, submitting, submitLabel = 'Enregistrer' }: { cancel: () => void; submitting?: boolean; submitLabel?: string }) {
-  return <div className="mt-6 flex justify-end gap-2 border-t border-white/[.07] pt-5"><Button type="button" variant="ghost" onClick={cancel}>Annuler</Button><Button type="submit" disabled={submitting}>{submitting && <LoaderCircle className="h-4 w-4 animate-spin" />}{submitLabel}</Button></div>;
+  return <><div aria-hidden="true" className="h-[76px]" /><div className="absolute inset-x-0 bottom-0 z-20 flex min-h-[76px] items-center justify-end gap-2 border-t border-white/[.07] bg-ink-900/95 px-5 py-4 shadow-[0_-12px_30px_rgba(0,0,0,.2)] backdrop-blur"><Button type="button" variant="ghost" onClick={cancel}>Annuler</Button><Button type="submit" disabled={submitting}>{submitting && <LoaderCircle className="h-4 w-4 animate-spin" />}{submitLabel}</Button></div></>;
 }

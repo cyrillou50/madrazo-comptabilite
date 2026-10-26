@@ -95,7 +95,7 @@ function normalizeResponse(value: any): any {
   if (typeof result.status === 'string') result.status = statusToFrench[result.status.toLowerCase()] || result.status;
   if (typeof result.paymentStatus === 'string') result.paymentStatus = statusToFrench[result.paymentStatus.toLowerCase()] || result.paymentStatus;
   if (typeof result.role === 'string') result.role = roleToFrench[result.role.toLowerCase()] || result.role;
-  if (typeof result.method === 'string') result.method = ({ cash: 'Espèces', bank: 'Virement RP', other: 'Autre' } as Record<string, string>)[result.method] || result.method;
+  if (typeof result.method === 'string') result.method = ({ cash: 'Espèces', bank: 'Virement', dirty_money: 'Argent sale', other: 'Autre' } as Record<string, string>)[result.method] || result.method;
   return result;
 }
 

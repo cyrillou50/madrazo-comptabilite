@@ -68,10 +68,25 @@ Dans les paramètres du dépôt :
 
 ## Configuration initiale du Patron
 
-Aucun identifiant par défaut n'existe. Utiliser la commande d'initialisation fournie par le backend sur le VPS, avec une adresse/identité explicite et un mot de passe saisi sans l'inscrire dans l'historique du shell. Cette opération doit :
+Aucun identifiant par défaut n'existe. Les connexions utilisent un pseudo, et
+non une adresse e-mail. Renseigner temporairement les variables suivantes dans
+l'environnement utilisé par la commande d'initialisation :
+
+```dotenv
+FIRST_ADMIN_USERNAME=Patron
+FIRST_ADMIN_PASSWORD=REMPLACER_PAR_UN_SECRET_LONG
+FIRST_ADMIN_DISPLAY_NAME=Patron
+```
+
+Exécuter ensuite `npm run admin:create` depuis `backend/`, puis retirer
+immédiatement `FIRST_ADMIN_PASSWORD` de l'environnement. Cette opération doit :
 
 - refuser de s'exécuter si un Patron actif existe déjà ;
 - appliquer Argon2id ;
 - créer l'événement d'audit initial ;
 - recommander une rotation immédiate si le mot de passe a été transmis par un canal temporaire.
+
+Les rôles, leurs permissions, ainsi que les catégories de marchandises et de
+dépenses se gèrent ensuite depuis l'interface. Aucun libellé métier par défaut
+n'est imposé après la migration de personnalisation.
 
