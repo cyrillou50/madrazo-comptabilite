@@ -8,7 +8,8 @@ import { useApi } from '../hooks/useApi';
 import type { DashboardData, Fund, FundBalances, LedgerEntry } from '../types';
 import { currency, currencySymbol, date } from '../lib/format';
 import { listOf, metaOf } from '../lib/data';
-import { fundColors, fundLabels, launderedAmount, launderingFee } from '../lib/treasury';
+import { fundLabels, launderedAmount, launderingFee } from '../lib/treasury';
+import { useAppearance } from '../contexts/AppearanceContext';
 import { Badge, Button, ErrorState, FormActions, Input, LoadingState, Modal, PageHeader, Panel, SearchField, Select, Textarea } from '../components/ui';
 import { DataTable } from '../components/DataTable';
 import { CategoryManager, type ManagedCategory } from '../components/CategoryManager';
@@ -26,7 +27,8 @@ async function downloadReport(format: 'csv' | 'xlsx', notify: (message: string, 
 }
 
 function FundDot({ fund }: { fund: Fund }) {
-  return <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: fundColors[fund] }} />;
+  const { palette } = useAppearance();
+  return <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: palette.fund[fund] }} />;
 }
 
 function FundBadge({ fund }: { fund: Fund }) {

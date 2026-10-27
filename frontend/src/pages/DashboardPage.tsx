@@ -13,9 +13,10 @@ import {
 import { Link } from 'react-router-dom';
 import clsx from 'clsx';
 import { useApi } from '../hooks/useApi';
+import { useAppearance } from '../contexts/AppearanceContext';
 import { useAuth } from '../contexts/AuthContext';
 import { currency, date, number } from '../lib/format';
-import { fundColors, fundLabels } from '../lib/treasury';
+import { fundLabels } from '../lib/treasury';
 import type { DashboardData, Item, Order } from '../types';
 import { Badge, ErrorState, LoadingState, PageHeader, Panel, Select } from '../components/ui';
 import { DataTable } from '../components/DataTable';
@@ -25,13 +26,6 @@ const EMPTY: DashboardData = {
   salesTrend: [], salesByItem: [], activeGroups: [], topItems: [], recentOrders: [], lowStock: [],
 };
 
-// Graphiques : marques fines, grille en filet plein, textes dans les tons neutres ; la couleur ne porte que l'identité.
-const SURFACE = '#111416';
-const GRID = 'rgba(255,255,255,.045)';
-const AXIS = '#52525b';
-const SALES = '#c52a32';
-const CONTEXT = '#a1a1aa';
-const tooltipStyle = { background: '#121518', border: '1px solid rgba(255,255,255,.09)', borderRadius: 12, color: '#e4e4e7', fontSize: 12 };
 const compact = new Intl.NumberFormat('fr-FR', { notation: 'compact', maximumFractionDigits: 1 }).format;
 const percent = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format;
 
@@ -87,6 +81,17 @@ export function DashboardPage() {
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
   const { can } = useAuth();
+  const { palette } = useAppearance();
+  // Couleurs des graphiques issues de l'apparence ; textes et infobulles toujours en tons neutres lisibles.
+  const chart = useMemo(() => ({
+    surface: palette.ink[850], grid: palette.chart.grid, axis: palette.chart.axis, text: palette.chart.text, muted: palette.chart.muted,
+    sales: palette.accent[500], bar: palette.accent[600], fund: palette.fund,
+    tooltip: {
+      contentStyle: { background: palette.chart.tooltip, border: `1px solid ${palette.chart.tooltipBorder}`, borderRadius: 12, fontSize: 12 },
+      itemStyle: { color: palette.chart.text },
+      labelStyle: { color: palette.chart.muted, marginBottom: 4 },
+    },
+  }), [palette]);
   const range = useMemo(() => {
     if (period === 'custom') return { from: customFrom, to: customTo };
     const to = new Date();
@@ -118,8 +123,8 @@ export function DashboardPage() {
       {treasury && <>
         <SectionTitle>Trésorerie</SectionTitle>
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label={fundLabels.clean} marker={fundColors.clean} value={currency(treasury.cleanBalance)} caption="Utilisable directement" icon={WalletCards} />
-          <StatCard label={fundLabels.dirty} marker={fundColors.dirty} value={currency(treasury.dirtyBalance)} caption={treasury.dirtyBalance > 0 && can('treasury.write') ? <Link to="/finances" className="font-semibold text-blood-400 hover:text-blood-300">À blanchir →</Link> : 'À blanchir avant usage'} icon={WashingMachine} tone={treasury.dirtyBalance > 0 ? 'warning' : 'neutral'} />
+          <StatCard label={fundLabels.clean} marker={chart.fund.clean} value={currency(treasury.cleanBalance)} caption="Utilisable directement" icon={WalletCards} />
+          <StatCard label={fundLabels.dirty} marker={chart.fund.dirty} value={currency(treasury.dirtyBalance)} caption={treasury.dirtyBalance > 0 && can('treasury.write') ? <Link to="/finances" className="font-semibold text-blood-400 hover:text-blood-300">À blanchir →</Link> : 'À blanchir avant usage'} icon={WashingMachine} tone={treasury.dirtyBalance > 0 ? 'warning' : 'neutral'} />
           <StatCard label="Blanchi sur la période" value={currency(treasury.launderedClean)} caption={treasury.launderingCount ? `${currency(treasury.launderedDirty)} engagés · commission ${currency(treasury.launderingFees)}` : 'Aucun blanchiment'} icon={WashingMachine} />
           <StatCard label="Apports sur la période" value={currency(treasury.depositsClean + treasury.depositsDirty)} caption={`Propre ${currency(treasury.depositsClean)} · Sale ${currency(treasury.depositsDirty)}`} icon={PiggyBank} />
         </div>
@@ -136,26 +141,26 @@ export function DashboardPage() {
       </div>
 
       <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,.75fr)]">
-        <ChartPanel title="Activité commerciale" subtitle="Ventes et encaissements par jour" legend={<ChartLegend items={[{ label: 'Ventes', color: SALES }, { label: 'Encaissements', color: CONTEXT, shape: 'dashed' }]} />}
+        <ChartPanel title="Activité commerciale" subtitle="Ventes et encaissements par jour" legend={<ChartLegend items={[{ label: 'Ventes', color: chart.sales }, { label: 'Encaissements', color: chart.muted, shape: 'dashed' }]} />}
           table={<MiniTable headers={['Jour', 'Ventes', 'Encaissements', 'Bénéfice']} rows={dashboard.salesTrend.map((row) => [dayLabel(row.date), currency(row.sales), currency(row.received), currency(row.profit)])} />}>
-          <div className="h-[280px]">{dashboard.salesTrend.length ? <ResponsiveContainer width="100%" height="100%"><AreaChart data={dashboard.salesTrend} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}><defs><linearGradient id="sales" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={SALES} stopOpacity={.18} /><stop offset="100%" stopColor={SALES} stopOpacity={0} /></linearGradient></defs><CartesianGrid stroke={GRID} vertical={false} /><XAxis dataKey="date" tickFormatter={dayLabel} stroke={AXIS} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} /><YAxis stroke={AXIS} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(value) => compact(value)} width={44} /><Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(255,255,255,.18)' }} labelFormatter={(value) => date(String(value))} formatter={(value: number, name: string) => [currency(value), name === 'sales' ? 'Ventes' : 'Encaissements']} /><Area type="monotone" dataKey="sales" stroke={SALES} strokeWidth={2} fill="url(#sales)" activeDot={{ r: 4, stroke: SURFACE, strokeWidth: 2 }} /><Area type="monotone" dataKey="received" stroke={CONTEXT} strokeWidth={2} fill="transparent" strokeDasharray="4 4" activeDot={{ r: 4, stroke: SURFACE, strokeWidth: 2 }} /></AreaChart></ResponsiveContainer> : <EmptyChart>Aucune activité sur cette période</EmptyChart>}</div>
+          <div className="h-[280px]">{dashboard.salesTrend.length ? <ResponsiveContainer width="100%" height="100%"><AreaChart data={dashboard.salesTrend} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}><defs><linearGradient id="sales" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={chart.sales} stopOpacity={.18} /><stop offset="100%" stopColor={chart.sales} stopOpacity={0} /></linearGradient></defs><CartesianGrid stroke={chart.grid} vertical={false} /><XAxis dataKey="date" tickFormatter={dayLabel} stroke={chart.axis} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} /><YAxis stroke={chart.axis} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(value) => compact(value)} width={44} /><Tooltip {...chart.tooltip} cursor={{ stroke: 'rgba(255,255,255,.18)' }} labelFormatter={(value) => date(String(value))} formatter={(value: number, name: string) => [currency(value), name === 'sales' ? 'Ventes' : 'Encaissements']} /><Area type="monotone" dataKey="sales" stroke={chart.sales} strokeWidth={2} fill="url(#sales)" activeDot={{ r: 4, stroke: chart.surface, strokeWidth: 2 }} /><Area type="monotone" dataKey="received" stroke={chart.muted} strokeWidth={2} fill="transparent" strokeDasharray="4 4" activeDot={{ r: 4, stroke: chart.surface, strokeWidth: 2 }} /></AreaChart></ResponsiveContainer> : <EmptyChart>Aucune activité sur cette période</EmptyChart>}</div>
         </ChartPanel>
 
-        <ChartPanel title="Encaissements par moyen de paiement" subtitle="Sur la période, selon la caisse alimentée" legend={<ChartLegend items={[{ label: fundLabels.dirty, color: fundColors.dirty, shape: 'square' }, { label: fundLabels.clean, color: fundColors.clean, shape: 'square' }]} />}
+        <ChartPanel title="Encaissements par moyen de paiement" subtitle="Sur la période, selon la caisse alimentée" legend={<ChartLegend items={[{ label: fundLabels.dirty, color: chart.fund.dirty, shape: 'square' }, { label: fundLabels.clean, color: chart.fund.clean, shape: 'square' }]} />}
           table={<MiniTable headers={['Moyen', 'Caisse', 'Montant']} rows={methods.map((row) => [row.name, fundLabels[row.fund], currency(row.amount)])} />}>
-          <div style={{ height: Math.max(180, methods.length * 40 + 16) }}>{methods.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={methods} layout="vertical" margin={{ top: 0, right: 72, left: 0, bottom: 0 }}><XAxis type="number" hide /><YAxis type="category" dataKey="name" width={110} stroke={AXIS} tick={{ fontSize: 11, fill: '#a1a1aa' }} tickLine={false} axisLine={false} /><Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,.03)' }} formatter={(value: number) => [currency(value), 'Encaissé']} /><Bar dataKey="amount" barSize={16} radius={[0, 4, 4, 0]}>{methods.map((row) => <Cell key={row.name} fill={fundColors[row.fund]} />)}<LabelList dataKey="amount" position="right" formatter={(value: number) => currency(value)} style={{ fill: '#d4d4d8', fontSize: 11 }} /></Bar></BarChart></ResponsiveContainer> : <EmptyChart>Aucun encaissement sur cette période</EmptyChart>}</div>
+          <div style={{ height: Math.max(180, methods.length * 40 + 16) }}>{methods.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={methods} layout="vertical" margin={{ top: 0, right: 72, left: 0, bottom: 0 }}><XAxis type="number" hide /><YAxis type="category" dataKey="name" width={110} stroke={chart.axis} tick={{ fontSize: 11, fill: chart.muted }} tickLine={false} axisLine={false} /><Tooltip {...chart.tooltip} cursor={false} formatter={(value: number) => [currency(value), 'Encaissé']} /><Bar dataKey="amount" barSize={16} radius={[0, 4, 4, 0]}>{methods.map((row) => <Cell key={row.name} fill={chart.fund[row.fund]} />)}<LabelList dataKey="amount" position="right" formatter={(value: number) => currency(value)} style={{ fill: chart.text, fontSize: 11 }} /></Bar></BarChart></ResponsiveContainer> : <EmptyChart>Aucun encaissement sur cette période</EmptyChart>}</div>
         </ChartPanel>
       </div>
 
       {treasury && <ChartPanel className="mt-4" title="Évolution de la trésorerie" subtitle="Solde d’argent propre et d’argent sale en fin de journée"
-        legend={<ChartLegend items={[{ label: fundLabels.clean, color: fundColors.clean, value: currency(lastBalance?.clean ?? treasury.cleanBalance) }, { label: fundLabels.dirty, color: fundColors.dirty, value: currency(lastBalance?.dirty ?? treasury.dirtyBalance) }]} />}
+        legend={<ChartLegend items={[{ label: fundLabels.clean, color: chart.fund.clean, value: currency(lastBalance?.clean ?? treasury.cleanBalance) }, { label: fundLabels.dirty, color: chart.fund.dirty, value: currency(lastBalance?.dirty ?? treasury.dirtyBalance) }]} />}
         table={<MiniTable headers={['Jour', fundLabels.clean, fundLabels.dirty]} rows={[...treasury.timeline].reverse().map((row) => [dayLabel(row.date), currency(row.clean), currency(row.dirty)])} />}>
-        <div className="h-[260px]">{treasury.timeline.length > 1 ? <ResponsiveContainer width="100%" height="100%"><LineChart data={treasury.timeline} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}><CartesianGrid stroke={GRID} vertical={false} /><XAxis dataKey="date" tickFormatter={dayLabel} stroke={AXIS} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} /><YAxis stroke={AXIS} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(value) => compact(value)} width={44} /><Tooltip contentStyle={tooltipStyle} cursor={{ stroke: 'rgba(255,255,255,.18)' }} labelFormatter={(value) => date(String(value))} formatter={(value: number, name: string) => [currency(value), name === 'clean' ? fundLabels.clean : fundLabels.dirty]} /><Line type="stepAfter" dataKey="clean" stroke={fundColors.clean} strokeWidth={2} dot={false} activeDot={{ r: 4, stroke: SURFACE, strokeWidth: 2 }} strokeLinejoin="round" strokeLinecap="round" /><Line type="stepAfter" dataKey="dirty" stroke={fundColors.dirty} strokeWidth={2} dot={false} activeDot={{ r: 4, stroke: SURFACE, strokeWidth: 2 }} strokeLinejoin="round" strokeLinecap="round" /></LineChart></ResponsiveContainer> : <EmptyChart>Aucun mouvement d’argent sur cette période</EmptyChart>}</div>
+        <div className="h-[260px]">{treasury.timeline.length > 1 ? <ResponsiveContainer width="100%" height="100%"><LineChart data={treasury.timeline} margin={{ top: 5, right: 8, left: 0, bottom: 0 }}><CartesianGrid stroke={chart.grid} vertical={false} /><XAxis dataKey="date" tickFormatter={dayLabel} stroke={chart.axis} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} /><YAxis stroke={chart.axis} tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(value) => compact(value)} width={44} /><Tooltip {...chart.tooltip} cursor={{ stroke: 'rgba(255,255,255,.18)' }} labelFormatter={(value) => date(String(value))} formatter={(value: number, name: string) => [currency(value), name === 'clean' ? fundLabels.clean : fundLabels.dirty]} /><Line type="stepAfter" dataKey="clean" stroke={chart.fund.clean} strokeWidth={2} dot={false} activeDot={{ r: 4, stroke: chart.surface, strokeWidth: 2 }} strokeLinejoin="round" strokeLinecap="round" /><Line type="stepAfter" dataKey="dirty" stroke={chart.fund.dirty} strokeWidth={2} dot={false} activeDot={{ r: 4, stroke: chart.surface, strokeWidth: 2 }} strokeLinejoin="round" strokeLinecap="round" /></LineChart></ResponsiveContainer> : <EmptyChart>Aucun mouvement d’argent sur cette période</EmptyChart>}</div>
       </ChartPanel>}
 
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <ChartPanel title="Groupes les plus actifs" subtitle="Montant vendu sur la période" table={<MiniTable headers={['Groupe', 'Ventes', 'Montant']} rows={dashboard.activeGroups.map((row) => [row.name, number(row.orders), currency(row.amount)])} />}>
-          <div className="h-64">{dashboard.activeGroups.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={dashboard.activeGroups} layout="vertical" margin={{ left: 5, right: 72 }}><CartesianGrid stroke={GRID} horizontal={false} /><XAxis type="number" hide /><YAxis type="category" dataKey="name" width={105} stroke={AXIS} tick={{ fontSize: 10, fill: '#a1a1aa' }} tickLine={false} axisLine={false} /><Tooltip contentStyle={tooltipStyle} cursor={{ fill: 'rgba(255,255,255,.03)' }} formatter={(value: number) => [currency(value), 'Vendu']} /><Bar dataKey="amount" fill="#ab1e25" radius={[0, 4, 4, 0]} barSize={14}><LabelList dataKey="amount" position="right" formatter={(value: number) => currency(value)} style={{ fill: '#d4d4d8', fontSize: 10 }} /></Bar></BarChart></ResponsiveContainer> : <EmptyChart>Pas encore de classement</EmptyChart>}</div>
+          <div className="h-64">{dashboard.activeGroups.length ? <ResponsiveContainer width="100%" height="100%"><BarChart data={dashboard.activeGroups} layout="vertical" margin={{ left: 5, right: 72 }}><CartesianGrid stroke={chart.grid} horizontal={false} /><XAxis type="number" hide /><YAxis type="category" dataKey="name" width={105} stroke={chart.axis} tick={{ fontSize: 10, fill: chart.muted }} tickLine={false} axisLine={false} /><Tooltip {...chart.tooltip} cursor={false} formatter={(value: number) => [currency(value), 'Vendu']} /><Bar dataKey="amount" fill={chart.bar} radius={[0, 4, 4, 0]} barSize={14}><LabelList dataKey="amount" position="right" formatter={(value: number) => currency(value)} style={{ fill: chart.text, fontSize: 10 }} /></Bar></BarChart></ResponsiveContainer> : <EmptyChart>Pas encore de classement</EmptyChart>}</div>
         </ChartPanel>
         <Panel className="p-5"><div className="mb-5 flex items-center justify-between"><div><h2 className="font-semibold text-zinc-100">Articles les plus vendus</h2><p className="mt-1 text-xs text-zinc-600">Top 10 en quantité, avec le montant vendu</p></div><ShoppingBag className="h-5 w-5 text-zinc-600" /></div><div className="space-y-3">{dashboard.topItems.length ? dashboard.topItems.slice(0, 10).map((item, index) => <div key={item.name} className="flex items-center gap-3"><span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-white/[.04] text-[10px] font-bold text-zinc-600">{String(index + 1).padStart(2, '0')}</span><div className="min-w-0 flex-1"><div className="mb-1 flex justify-between gap-2 text-xs"><span className="truncate font-medium text-zinc-300">{item.name}</span><span className="shrink-0 text-zinc-500">{number(item.quantity)} unités · {currency(item.amount)}</span></div><div className="h-1 overflow-hidden rounded-full bg-white/[.05]"><div className="h-full rounded-full bg-gradient-to-r from-blood-700 to-blood-400" style={{ width: `${Math.max(5, (item.quantity / maxQuantity) * 100)}%` }} /></div></div></div>) : <div className="grid h-52 place-items-center text-sm text-zinc-600">Aucun article vendu</div>}</div></Panel>
       </div>

@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { HashRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { AppearanceProvider } from './contexts/AppearanceContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ConfirmProvider } from './contexts/ConfirmContext';
 import { ToastProvider } from './contexts/ToastContext';
@@ -39,7 +40,7 @@ function Home() {
 }
 
 export default function App() {
-  return <HashRouter><AuthProvider><ToastProvider><ConfirmProvider><Routes>
+  return <HashRouter><AuthProvider><AppearanceProvider><ToastProvider><ConfirmProvider><Routes>
     <Route path="/connexion" element={<LoginRoute />} />
     <Route path="/" element={<Private><Home /></Private>} />
     <Route path="/groupes" element={<Private permission="groups.read"><GroupsPage /></Private>} />
@@ -54,5 +55,5 @@ export default function App() {
     <Route path="/parametres" element={<Private permission="settings.read"><SettingsPage /></Private>} />
     <Route path="/interdit" element={<Private><ForbiddenPage /></Private>} />
     <Route path="*" element={<Private><NotFoundPage /></Private>} />
-  </Routes></ConfirmProvider></ToastProvider></AuthProvider></HashRouter>;
+  </Routes></ConfirmProvider></ToastProvider></AppearanceProvider></AuthProvider></HashRouter>;
 }

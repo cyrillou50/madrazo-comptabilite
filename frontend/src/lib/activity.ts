@@ -169,6 +169,7 @@ const fieldLabels: Array<[string, string, (value: any) => string]> = [
   ['cleanAmountCents', 'Argent propre obtenu', cents], ['feeCents', 'Commission', cents],
   ['reason', 'Motif', String], ['description', 'Description', String], ['isActive', 'Actif', (value) => (value ? 'Oui' : 'Non')],
   ['isDirty', 'Argent sale', (value) => (value ? 'Oui' : 'Non')], ['launderingFeePercent', 'Commission de blanchiment (%)', String],
+  ['appearance', 'Apparence', (value) => (value && typeof value === 'object' ? `couleur ${value.accent} · fond ${value.background} · propre ${value.clean} · sale ${value.dirty}` : '')],
   ['organizationName', 'Nom affiché', String], ['currency', 'Devise', (value) => (value === 'EUR' ? '€' : '$')],
   ['stockReservationEnabled', 'Réservation automatique', (value) => (value ? 'Oui' : 'Non')],
   ['sessionDurationMinutes', 'Durée de session (minutes)', String], ['debtWarningDays', 'Alerte dette après (jours)', String],

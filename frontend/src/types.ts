@@ -1,3 +1,5 @@
+import type { Appearance } from './lib/appearance';
+
 export type Id = string | number;
 
 export interface Preferences {
@@ -6,6 +8,7 @@ export interface Preferences {
   debtWarningDays: number;
   defaultPageSize: number;
   launderingFeePercent: number;
+  appearance?: Partial<Appearance>;
 }
 
 export interface User {

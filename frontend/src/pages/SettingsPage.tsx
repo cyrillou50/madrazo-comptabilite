@@ -4,11 +4,15 @@ import { api, ApiError } from '../lib/api';
 import { useApi } from '../hooks/useApi';
 import { Button, ErrorState, Input, LoadingState, PageHeader, Panel, Select } from '../components/ui';
 import { CategoryManager, type ManagedListKind } from '../components/CategoryManager';
+import { AppearancePanel } from '../components/AppearancePanel';
+import { useAppearance } from '../contexts/AppearanceContext';
+import { defaultAppearance, sanitizeAppearance, type Appearance } from '../lib/appearance';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 
-interface SettingsData { organizationName: string; currency: string; stockReservationEnabled: boolean; sessionDurationMinutes: number; debtWarningDays: number; defaultPageSize: number; launderingFeePercent: number }
-const defaults: SettingsData = { organizationName: 'MADRAZO', currency: 'USD', stockReservationEnabled: true, sessionDurationMinutes: 480, debtWarningDays: 30, defaultPageSize: 25, launderingFeePercent: 0 };
+interface SettingsData { organizationName: string; currency: string; stockReservationEnabled: boolean; sessionDurationMinutes: number; debtWarningDays: number; defaultPageSize: number; launderingFeePercent: number; appearance: Appearance }
+const defaults: SettingsData = { organizationName: 'MADRAZO', currency: 'USD', stockReservationEnabled: true, sessionDurationMinutes: 480, debtWarningDays: 30, defaultPageSize: 25, launderingFeePercent: 0, appearance: defaultAppearance };
+const sameAppearance = (first: Appearance, second: Appearance) => first.accent === second.accent && first.background === second.background && first.clean === second.clean && first.dirty === second.dirty;
 
 const managedLists: Array<{ kind: ManagedListKind; label: string; description: string; permission: string }> = [
   { kind: 'item-categories', label: 'Catégories de marchandises', description: 'Classement du catalogue', permission: 'catalog.write' },
@@ -22,7 +26,14 @@ export function SettingsPage() {
   const { notify } = useToast(); const { can, refresh } = useAuth();
   const canWrite = can('settings.write');
   const lists = managedLists.filter((list) => can(list.permission));
-  useEffect(() => { if (query.data) setValues((current) => ({ ...current, ...query.data })); }, [query.data]);
+  const { appearance: savedAppearance, preview, cancelPreview } = useAppearance();
+  useEffect(() => { if (query.data) setValues((current) => ({ ...current, ...query.data, appearance: sanitizeAppearance(query.data?.appearance) })); }, [query.data]);
+  // Aperçu immédiat des couleurs modifiées ; sans enregistrement, l'apparence d'origine revient en quittant la page.
+  useEffect(() => {
+    if (!query.data) return;
+    if (sameAppearance(values.appearance, savedAppearance)) cancelPreview(); else preview(values.appearance);
+  }, [values.appearance, savedAppearance, query.data, preview, cancelPreview]);
+  useEffect(() => () => cancelPreview(), [cancelPreview]);
   async function save() {
     setSaving(true);
     try { await api.put('/settings', values); notify('Paramètres enregistrés.'); query.reload(); await refresh(); }
@@ -38,6 +49,7 @@ export function SettingsPage() {
         <Input label="Lignes par page" type="number" min="10" max="100" value={values.defaultPageSize} onChange={(e) => setValues({ ...values, defaultPageSize: Number(e.target.value) })} />
         <Input label="Commission de blanchiment (%)" type="number" min="0" max="99" step="0.01" value={values.launderingFeePercent} onChange={(e) => setValues({ ...values, launderingFeePercent: Number(e.target.value) })} hint="Proposée par défaut lors d’un blanchiment, modifiable à chaque fois." />
       </fieldset></Panel>
+      <AppearancePanel value={values.appearance} disabled={!canWrite} onChange={(appearance) => setValues((current) => ({ ...current, appearance }))} />
       {lists.length > 0 && <Panel className="p-5"><div className="mb-5 flex items-center gap-3"><span className="rounded-xl bg-amber-500/10 p-2.5 text-amber-400"><ListChecks className="h-5 w-5" /></span><div><h2 className="font-semibold text-zinc-100">Listes personnalisables</h2><p className="text-xs text-zinc-600">Vous choisissez librement leur contenu</p></div></div><div className="grid gap-2 sm:grid-cols-2">{lists.map((list) => <button key={list.kind} type="button" onClick={() => setOpenList(list.kind)} className="rounded-xl border border-white/[.07] bg-white/[.02] p-4 text-left transition hover:border-white/[.12] hover:bg-white/[.05]"><span className="block text-sm font-semibold text-zinc-200">{list.label}</span><span className="mt-1 block text-xs text-zinc-600">{list.description}</span></button>)}</div></Panel>}
       <Panel className="p-5"><div className="mb-5 flex items-center gap-3"><span className="rounded-xl bg-sky-500/10 p-2.5 text-sky-400"><Database className="h-5 w-5" /></span><div><h2 className="font-semibold text-zinc-100">Stocks & commandes</h2><p className="text-xs text-zinc-600">Règles opérationnelles générales</p></div></div><label className="flex items-center justify-between gap-4 rounded-xl border border-white/[.07] bg-white/[.02] p-4"><div><p className="text-sm font-medium text-zinc-300">Réservation automatique</p><p className="mt-1 text-xs text-zinc-600">Réserver les quantités dès l’enregistrement d’une vente.</p></div><input type="checkbox" disabled={!canWrite} checked={values.stockReservationEnabled} onChange={(e) => setValues({ ...values, stockReservationEnabled: e.target.checked })} className="h-5 w-5 accent-blood-600" /></label></Panel>
       <Panel className="p-5"><div className="mb-5 flex items-center gap-3"><span className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-400"><ShieldCheck className="h-5 w-5" /></span><div><h2 className="font-semibold text-zinc-100">Sécurité des sessions</h2><p className="text-xs text-zinc-600">Durée d’activité autorisée</p></div></div><Input label="Expiration après (minutes)" type="number" min="15" max="1440" disabled={!canWrite} value={values.sessionDurationMinutes} onChange={(e) => setValues({ ...values, sessionDurationMinutes: Number(e.target.value) })} hint="S’applique aux prochaines connexions." /></Panel>

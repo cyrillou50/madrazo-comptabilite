@@ -8,7 +8,7 @@ export function Button({ variant = 'primary', size = 'md', className, children, 
   return <button className={clsx(
     'inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blood-400 disabled:cursor-not-allowed disabled:opacity-50',
     size === 'sm' ? 'px-3 py-2 text-xs' : 'px-4 py-2.5 text-sm',
-    variant === 'primary' && 'bg-blood-600 text-white shadow-lg shadow-blood-900/30 hover:bg-blood-500',
+    variant === 'primary' && 'bg-blood-600 text-on-accent shadow-lg shadow-blood-900/30 hover:bg-blood-500',
     variant === 'secondary' && 'border border-white/10 bg-white/[.05] text-zinc-200 hover:bg-white/[.09]',
     variant === 'ghost' && 'text-zinc-400 hover:bg-white/[.06] hover:text-white',
     variant === 'danger' && 'border border-red-500/25 bg-red-500/10 text-red-300 hover:bg-red-500/20',
