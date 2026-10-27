@@ -8,7 +8,7 @@ import { useApi } from '../hooks/useApi';
 import type { DashboardData, Fund, FundBalances, LedgerEntry } from '../types';
 import { currency, currencySymbol, date } from '../lib/format';
 import { listOf, metaOf } from '../lib/data';
-import { fundLabels, launderedAmount, launderingFee } from '../lib/treasury';
+import { fundColors, fundLabels, launderedAmount, launderingFee } from '../lib/treasury';
 import { Badge, Button, ErrorState, FormActions, Input, LoadingState, Modal, PageHeader, Panel, SearchField, Select, Textarea } from '../components/ui';
 import { DataTable } from '../components/DataTable';
 import { CategoryManager, type ManagedCategory } from '../components/CategoryManager';
@@ -25,8 +25,12 @@ async function downloadReport(format: 'csv' | 'xlsx', notify: (message: string, 
   try { const query = new URLSearchParams(); if (from) query.set('from', from); if (to) query.set('to', to); const response = await fetch(`${apiBaseUrl}/finances/export.${format}${query.size ? `?${query}` : ''}`, { credentials: 'include' }); if (!response.ok) throw new Error(); const blob = await response.blob(); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `finances-madrazo-${new Date().toISOString().slice(0,10)}.${format}`; a.click(); URL.revokeObjectURL(url); notify(`Export ${format.toUpperCase()} généré.`); } catch { notify('Export indisponible.', 'error'); }
 }
 
+function FundDot({ fund }: { fund: Fund }) {
+  return <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: fundColors[fund] }} />;
+}
+
 function FundBadge({ fund }: { fund: Fund }) {
-  return <Badge tone={fund === 'dirty' ? 'warning' : 'success'}>{fundLabels[fund]}</Badge>;
+  return <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-white/10 bg-white/[.04] px-2.5 py-1 text-[11px] font-semibold text-zinc-300"><FundDot fund={fund} />{fundLabels[fund]}</span>;
 }
 
 /** Argent ajouté par les membres eux-mêmes, dans la caisse choisie. */
@@ -49,7 +53,7 @@ function DepositDialog({ open, onClose, onDone }: { open: boolean; onClose: () =
   }
   return <Modal open={open} onClose={onClose} title="Ajouter de l’argent" description="Argent que vous mettez vous-mêmes dans la caisse : il s’ajoute au solde choisi.">
     <form onSubmit={submit} className="space-y-4 p-5">
-      <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Caisse">{(['dirty', 'clean'] as const).map((value) => <button key={value} type="button" role="radio" aria-checked={fund === value} onClick={() => setFund(value)} className={`rounded-xl border p-3 text-left text-sm transition ${fund === value ? (value === 'dirty' ? 'border-amber-500/40 bg-amber-500/10 text-amber-200' : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-200') : 'border-white/[.07] bg-white/[.02] text-zinc-400 hover:bg-white/[.05]'}`}><span className="block font-semibold">{fundLabels[value]}</span><span className="mt-0.5 block text-xs opacity-70">{value === 'dirty' ? 'À blanchir ensuite' : 'Utilisable directement'}</span></button>)}</div>
+      <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Caisse">{(['dirty', 'clean'] as const).map((value) => <button key={value} type="button" role="radio" aria-checked={fund === value} onClick={() => setFund(value)} className={`rounded-xl border p-3 text-left text-sm transition ${fund === value ? 'border-blood-500/40 bg-blood-500/10 text-zinc-100' : 'border-white/[.07] bg-white/[.02] text-zinc-400 hover:bg-white/[.05]'}`}><span className="flex items-center gap-2 font-semibold"><FundDot fund={value} />{fundLabels[value]}</span><span className="mt-0.5 block text-xs opacity-70">{value === 'dirty' ? 'À blanchir ensuite' : 'Utilisable directement'}</span></button>)}</div>
       <Input label={`Montant (${currencySymbol()})`} type="number" min="1" step="1" value={amount} onChange={(event) => setAmount(event.target.value)} required autoFocus />
       <Input label="Libellé" value={label} onChange={(event) => setLabel(event.target.value)} maxLength={200} required />
       <Input label="Date (facultative)" type="date" value={day} onChange={(event) => setDay(event.target.value)} hint="Laissez vide pour maintenant." />
@@ -84,13 +88,13 @@ function LaunderingDialog({ open, onClose, onDone, availableDirty }: { open: boo
   }
   return <Modal open={open} onClose={onClose} title="Blanchir de l’argent" description="L’argent sale engagé sort de la caisse sale ; l’argent propre obtenu entre dans la caisse propre.">
     <form onSubmit={submit} className="space-y-4 p-5">
-      <div className="flex items-center justify-between rounded-xl border border-amber-500/15 bg-amber-500/[.05] p-3 text-sm"><span className="text-zinc-400">Argent sale disponible</span><span className="font-bold text-amber-300">{currency(availableDirty)}</span></div>
+      <div className="flex items-center justify-between rounded-xl border border-white/[.07] bg-white/[.02] p-3 text-sm"><span className="flex items-center gap-2 text-zinc-400"><FundDot fund="dirty" />Argent sale disponible</span><span className="font-bold text-zinc-100">{currency(availableDirty)}</span></div>
       <Input label={`Argent sale à blanchir (${currencySymbol()})`} type="number" min="1" step="1" value={dirty} onChange={(event) => changeDirty(event.target.value)} required autoFocus hint={availableDirty > 0 ? <button type="button" className="font-semibold text-blood-400 hover:text-blood-300" onClick={() => changeDirty(String(availableDirty))}>Tout blanchir</button> : undefined} />
       <div className="grid gap-4 sm:grid-cols-2">
         <Input label="Commission (%)" type="number" min="0" max="99" step="0.01" value={fee} onChange={(event) => changeFee(event.target.value)} />
         <Input label={`Argent propre obtenu (${currencySymbol()})`} type="number" min="1" step="1" value={clean} onChange={(event) => changeClean(event.target.value)} required />
       </div>
-      <div className="grid grid-cols-3 gap-2 rounded-xl border border-white/[.07] bg-white/[.02] p-3 text-center text-xs"><div><p className="text-zinc-600">Sort de l’argent sale</p><p className="mt-1 font-bold text-amber-300">−{currency(dirtyValue)}</p></div><div><p className="text-zinc-600">Entre en argent propre</p><p className="mt-1 font-bold text-emerald-300">+{currency(cleanValue)}</p></div><div><p className="text-zinc-600">Commission</p><p className="mt-1 font-bold text-red-300">{currency(commission)}</p></div></div>
+      <div className="grid grid-cols-3 gap-2 rounded-xl border border-white/[.07] bg-white/[.02] p-3 text-center text-xs"><div><p className="flex items-center justify-center gap-1.5 text-zinc-600"><FundDot fund="dirty" />Sort de l’argent sale</p><p className="mt-1 font-bold text-zinc-100">−{currency(dirtyValue)}</p></div><div><p className="flex items-center justify-center gap-1.5 text-zinc-600"><FundDot fund="clean" />Entre en argent propre</p><p className="mt-1 font-bold text-zinc-100">+{currency(cleanValue)}</p></div><div><p className="text-zinc-600">Commission</p><p className="mt-1 font-bold text-red-300">{currency(commission)}</p></div></div>
       <Textarea label="Notes" placeholder="Ex. : via le garage, contact…" value={notes} onChange={(event) => setNotes(event.target.value)} maxLength={500} />
       {error && <p role="alert" className="rounded-xl border border-red-500/20 bg-red-500/[.07] px-3.5 py-3 text-sm text-red-300">{error}</p>}
       <FormActions cancel={onClose} submitting={saving} submitLabel="Blanchir" />
@@ -130,8 +134,8 @@ export function FinancePage() {
   return <div className="animate-enter"><PageHeader eyebrow="Registre financier" title="Finances & trésorerie" description="Suivez l’argent propre et l’argent sale, ajoutez vos apports et blanchissez." action={<div className="flex flex-wrap gap-2">{can('payments.read') && <><Button variant="secondary" onClick={() => void downloadReport('csv', notify, from, to)}><Download className="h-4 w-4" />CSV</Button><Button variant="secondary" onClick={() => void downloadReport('xlsx', notify, from, to)}><FileSpreadsheet className="h-4 w-4" />Excel</Button></>}{can('expenses.write') && <Button variant="secondary" onClick={() => setCategoriesOpen(true)}><Tags className="h-4 w-4" />Catégories de dépenses</Button>}{can('expenses.create') && <Button variant="secondary" onClick={openExpense}><Plus className="h-4 w-4" />Nouvelle dépense</Button>}{canTreasury && <Button variant="secondary" onClick={() => setDepositOpen(true)}><PiggyBank className="h-4 w-4" />Ajouter de l’argent</Button>}{canTreasury && <Button onClick={() => setLaunderOpen(true)}><WashingMachine className="h-4 w-4" />Blanchir</Button>}</div>} />
 
     <div className="mb-4 grid gap-3 sm:grid-cols-3">
-      <Panel className="p-4"><div className="flex items-center justify-between"><p className="label">Argent propre</p><WalletCards className="h-4 w-4 text-emerald-400" /></div><p className="mt-1 text-2xl font-bold text-emerald-300">{balancesQuery.loading && !balances ? '…' : currency(cleanBalance)}</p><p className="mt-1 text-[11px] text-zinc-600">Utilisable directement</p></Panel>
-      <Panel className="p-4"><div className="flex items-center justify-between"><p className="label">Argent sale</p><WashingMachine className="h-4 w-4 text-amber-400" /></div><p className="mt-1 text-2xl font-bold text-amber-300">{balancesQuery.loading && !balances ? '…' : currency(dirtyBalance)}</p><p className="mt-1 text-[11px] text-zinc-600">{canTreasury && dirtyBalance > 0 ? <button type="button" className="font-semibold text-blood-400 hover:text-blood-300" onClick={() => setLaunderOpen(true)}>Blanchir maintenant</button> : 'À blanchir avant usage'}</p></Panel>
+      <Panel className="p-4"><div className="flex items-center justify-between"><p className="label flex items-center gap-1.5"><FundDot fund="clean" />Argent propre</p><WalletCards className="h-4 w-4 text-zinc-600" /></div><p className="mt-1 text-2xl font-bold text-zinc-100">{balancesQuery.loading && !balances ? '…' : currency(cleanBalance)}</p><p className="mt-1 text-[11px] text-zinc-600">Utilisable directement</p></Panel>
+      <Panel className="p-4"><div className="flex items-center justify-between"><p className="label flex items-center gap-1.5"><FundDot fund="dirty" />Argent sale</p><WashingMachine className="h-4 w-4 text-zinc-600" /></div><p className="mt-1 text-2xl font-bold text-zinc-100">{balancesQuery.loading && !balances ? '…' : currency(dirtyBalance)}</p><p className="mt-1 text-[11px] text-zinc-600">{canTreasury && dirtyBalance > 0 ? <button type="button" className="font-semibold text-blood-400 hover:text-blood-300" onClick={() => setLaunderOpen(true)}>Blanchir maintenant</button> : 'À blanchir avant usage'}</p></Panel>
       <Panel className="p-4"><div className="flex items-center justify-between"><p className="label">Total en caisse</p><Scale className="h-4 w-4 text-sky-400" /></div><p className="mt-1 text-2xl font-bold">{balancesQuery.loading && !balances ? '…' : currency(cleanBalance + dirtyBalance)}</p><p className="mt-1 text-[11px] text-zinc-600">Propre et sale confondus</p></Panel>
     </div>
     {balancesQuery.error && <Panel className="mb-4"><ErrorState message={balancesQuery.error} retry={balancesQuery.reload} /></Panel>}

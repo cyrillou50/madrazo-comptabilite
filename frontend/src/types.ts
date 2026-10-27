@@ -189,6 +189,18 @@ export interface NotificationsData {
   events: NotificationEvent[];
 }
 
+export interface TreasuryOverview {
+  cleanBalance: number;
+  dirtyBalance: number;
+  launderedDirty: number;
+  launderedClean: number;
+  launderingFees: number;
+  launderingCount: number;
+  depositsClean: number;
+  depositsDirty: number;
+  timeline: Array<{ date: string; clean: number; dirty: number }>;
+}
+
 export interface DashboardData {
   totals: {
     received: number;
@@ -196,8 +208,6 @@ export interface DashboardData {
     grossProfit: number;
     expenses: number;
     cashBalance: number;
-    cleanBalance?: number;
-    dirtyBalance?: number;
     outstandingDebt: number;
     salesCount: number;
     groupsCount: number;
@@ -205,6 +215,10 @@ export interface DashboardData {
     pendingOrders: number;
     lowStockItems: number;
   };
+  receivedDirty?: number;
+  paymentsByMethod?: Array<{ name: string; fund: Fund; amount: number }>;
+  /** Absent pour les rôles qui n'ont pas accès aux finances. */
+  treasury?: TreasuryOverview | null;
   salesTrend: Array<{ date: string; sales: number; received: number; profit: number }>;
   salesByItem: Array<{ name: string; value: number }>;
   activeGroups: Array<{ name: string; amount: number; orders: number }>;
